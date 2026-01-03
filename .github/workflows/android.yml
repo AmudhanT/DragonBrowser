@@ -23,6 +23,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          # FIX: Force install the latest version of the broken package first
+          npm install @google/genai@latest
+          
+          # Now install the rest of the dependencies
           npm install
           npm install @capacitor/android
 
