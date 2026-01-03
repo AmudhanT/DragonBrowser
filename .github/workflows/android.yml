@@ -1,4 +1,4 @@
-name: Build DragonBrowser (Debug with Permissions)
+name: Build DragonBrowser (Fixed Manifest)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -46,14 +46,13 @@ jobs:
           npx cap sync
 
       # ========================================================
-      # INJECT YOUR CUSTOM PERMISSIONS MANIFEST
+      # INJECT CUSTOM MANIFEST (FIXED: REMOVED 'package' ATTRIBUTE)
       # ========================================================
       - name: Inject Custom AndroidManifest
         run: |
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.dragongo.browser">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -82,7 +81,7 @@ jobs:
                   android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
                   <activity
-                      android:name=".MainActivity"
+                      android:name="com.dragongo.browser.MainActivity"
                       android:exported="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"
                       android:hardwareAccelerated="true">
@@ -97,7 +96,7 @@ jobs:
           EOF
 
       # ========================================================
-      # BUILD DEBUG APK (No Keys Required)
+      # BUILD DEBUG APK
       # ========================================================
       - name: Build Debug APK
         run: |
@@ -108,5 +107,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: DragonBrowser-Debug-With-Permissions
+          name: DragonBrowser-Debug-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
