@@ -1,4 +1,4 @@
-name: Build DragonBrowser (Fixed Manifest)
+name: Build DragonBrowser (Correct ID)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -22,9 +22,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          # 1. Fix the dependency error
           npm install @google/genai@latest
-          # 2. Install everything else
           npm install
           npm install @capacitor/android
 
@@ -40,37 +38,50 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Create Android Project
+      # ========================================================
+      # STEP 1: FORCE CONFIG TO USE 'com.dragon.browser'
+      # ========================================================
+      - name: Fix Capacitor Config
         run: |
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "com.dragon.browser",
+            "appName": "Dragon Browser",
+            "webDir": "dist",
+            "bundledWebRuntime": false
+          }
+          EOF
+
+      # ========================================================
+      # STEP 2: REGENERATE ANDROID FOLDER
+      # This creates the correct 'com/dragon/browser' folders
+      # ========================================================
+      - name: Refresh Android Platform
+        run: |
+          rm -rf android
           npx cap add android
           npx cap sync
 
       # ========================================================
-      # INJECT CUSTOM MANIFEST (FIXED: REMOVED 'package' ATTRIBUTE)
+      # STEP 3: INJECT MANIFEST WITH NEW ID
       # ========================================================
       - name: Inject Custom AndroidManifest
         run: |
           cat <<EOF > android/app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
+              
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
               <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
               <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
               <uses-permission android:name="android.permission.CAMERA" />
-
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
               <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
               <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-
               <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
               <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
-
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
               <application
@@ -79,9 +90,9 @@ jobs:
                   android:icon="@mipmap/ic_launcher"
                   android:label="@string/app_name"
                   android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-
+                  
                   <activity
-                      android:name="com.dragongo.browser.MainActivity"
+                      android:name="com.dragon.browser.MainActivity"
                       android:exported="true"
                       android:configChanges="orientation|screenSize|keyboardHidden"
                       android:hardwareAccelerated="true">
@@ -90,14 +101,10 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
-
               </application>
           </manifest>
           EOF
 
-      # ========================================================
-      # BUILD DEBUG APK
-      # ========================================================
       - name: Build Debug APK
         run: |
           cd android
@@ -107,5 +114,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: DragonBrowser-Debug-Fixed
+          name: DragonBrowser-NewID
           path: android/app/build/outputs/apk/debug/app-debug.apk
