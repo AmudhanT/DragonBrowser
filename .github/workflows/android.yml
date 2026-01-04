@@ -1,4 +1,4 @@
-name: Build DragonBrowser (Correct ID)
+name: Build DragonBrowser (YouTube Fix)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -39,7 +39,8 @@ jobs:
         uses: android-actions/setup-android@v3
 
       # ========================================================
-      # STEP 1: FORCE CONFIG TO USE 'com.dragon.browser'
+      # STEP 1: CONFIG FIX (USER AGENT SPOOFING)
+      # This tricks YouTube into thinking we are Chrome
       # ========================================================
       - name: Fix Capacitor Config
         run: |
@@ -48,13 +49,20 @@ jobs:
             "appId": "com.dragon.browser",
             "appName": "Dragon Browser",
             "webDir": "dist",
-            "bundledWebRuntime": false
+            "bundledWebRuntime": false,
+            "server": {
+              "androidScheme": "https",
+              "allowNavigation": ["*"]
+            },
+            "android": {
+              "allowMixedContent": true,
+              "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36"
+            }
           }
           EOF
 
       # ========================================================
-      # STEP 2: REGENERATE ANDROID FOLDER
-      # This creates the correct 'com/dragon/browser' folders
+      # STEP 2: REGENERATE ANDROID PLATFORM
       # ========================================================
       - name: Refresh Android Platform
         run: |
@@ -63,7 +71,7 @@ jobs:
           npx cap sync
 
       # ========================================================
-      # STEP 3: INJECT MANIFEST WITH NEW ID
+      # STEP 3: INJECT MANIFEST
       # ========================================================
       - name: Inject Custom AndroidManifest
         run: |
@@ -114,5 +122,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: DragonBrowser-NewID
+          name: DragonBrowser-YouTube-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          
